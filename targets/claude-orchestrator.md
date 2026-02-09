@@ -6,7 +6,7 @@
 - Branch: `main`
 
 ## Description
-Lightweight MCP server providing workflow tools for Claude Code. 11 tools covering workflow management, verification, and project memory.
+Lightweight MCP server providing workflow tools for Claude Code. 12 tools covering workflow management, verification, and project memory.
 
 ## Tech Stack
 - Python 3.11+
@@ -31,7 +31,7 @@ uv run pytest -q && uv run ruff check src/ tests/ && uv run mypy src/claude_orch
 - `tests/test_e2e.py` -- End-to-end tests
 
 ## Constraints
-- Tool count is currently 11 -- tests assert this; update test if adding/removing tools
+- Tool count is currently 12 -- tests assert this; update test if adding/removing tools
 - protocol.md is bundled as package data -- changes require reinstall or editable install
 - Verification suite MUST pass before any commit (pytest, ruff, mypy, bandit)
 - No breaking changes to existing MCP tool signatures without updating all consumers
