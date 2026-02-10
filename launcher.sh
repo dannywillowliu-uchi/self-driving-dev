@@ -16,6 +16,7 @@ set -euo pipefail
 
 DRY_RUN=false
 BACKGROUND=false
+DISCOVER=false
 STOP=false
 TIMEOUT=3600
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -28,6 +29,7 @@ while [[ $# -gt 0 ]]; do
 		--dry-run) DRY_RUN=true; shift ;;
 		--force) FORCE=true; shift ;;
 		--background) BACKGROUND=true; shift ;;
+		--discover) DISCOVER=true; shift ;;
 		--timeout) TIMEOUT="$2"; shift 2 ;;
 		--stop) STOP=true; shift ;;
 		*) TARGET="$1"; shift ;;
@@ -120,7 +122,12 @@ echo ""
 
 if $DRY_RUN; then
 	echo "[dry run] Would launch: claude --project-dir $SCRIPT_DIR"
-	echo "[dry run] Prompt: Read progress.md and BACKLOG.md, then targets/$TARGET.md. Follow session loop."
+	if $DISCOVER; then
+		echo "[dry run] Mode: discovery only"
+		echo "[dry run] Prompt: Run discovery loop from CLAUDE.md. Audit target, find opportunities, write new backlog phases."
+	else
+		echo "[dry run] Prompt: Read progress.md and BACKLOG.md, then targets/$TARGET.md. Follow session loop."
+	fi
 	if $BACKGROUND; then
 		echo "[dry run] Background mode: output -> $SESSION_LOG"
 		echo "[dry run] Timeout: ${TIMEOUT}s"
@@ -135,7 +142,11 @@ if $DRY_RUN; then
 	exit 0
 fi
 
-PROMPT="Read progress.md and BACKLOG.md to understand the current state. Then read targets/$TARGET.md for target-specific context. Continue from where the last session left off. Follow the session loop defined in CLAUDE.md."
+if $DISCOVER; then
+	PROMPT="Read progress.md and BACKLOG.md to understand the current state. Then read targets/$TARGET.md for target-specific context. All backlog phases should be complete. Run the Continuous Discovery loop from CLAUDE.md: audit the target repo, rank opportunities, and write 1-3 new phases to BACKLOG.md. Do NOT execute any implementation -- discovery only."
+else
+	PROMPT="Read progress.md and BACKLOG.md to understand the current state. Then read targets/$TARGET.md for target-specific context. Continue from where the last session left off. Follow the session loop defined in CLAUDE.md."
+fi
 
 if $BACKGROUND; then
 	# Background mode: run with nohup, log output, enforce timeout

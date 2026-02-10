@@ -62,6 +62,45 @@ Background sessions:
 - Clean up PID file on exit (normal, timeout, or error)
 - Resume works automatically -- next launch reads progress.md
 
+## Continuous Discovery
+
+When all backlog phases are complete (no unblocked phases remain), switch to discovery mode instead of stopping:
+
+### Discovery Session Loop
+
+1. Confirm all phases in BACKLOG.md are complete (check progress.md)
+2. Audit the target repo:
+   - Run the verification suite (`run_verification` or target-specific commands)
+   - Read recent git log (last 10 commits) for context
+   - Scan for TODOs/FIXMEs in source files
+   - Check for outdated dependencies if applicable
+3. Rank discovered opportunities by priority:
+   - **Regressions** (broken tests, new lint errors) -- highest priority
+   - **Bugs** (TODO/FIXME markers with severity hints)
+   - **Code quality** (refactoring opportunities, test coverage gaps)
+   - **Features** (enhancements surfaced during audit)
+   - **Dependencies** (outdated packages, security advisories) -- lowest priority
+4. Write the top 1-3 opportunities as new phases in BACKLOG.md:
+   - Every new phase MUST have `checkpoint: true` (discovery is advisory, not autonomous)
+   - Include clear problem statement and verification criteria
+   - Max 3 new phases per discovery session
+5. Update progress.md: `Phase: Discovery complete`, list what was found
+6. Send Telegram notification with discovery summary
+7. Stop and wait for human review of the new backlog phases
+
+### Discovery Constraints
+
+- Discovery phases are ALWAYS `checkpoint: true` -- never auto-execute discovered work
+- Max 3 new phases per discovery session to prevent scope creep
+- Prioritize regressions and bugs over features and dependencies
+- If verification suite is failing, the first discovered phase MUST fix it
+- Discovery does NOT modify code -- it only writes to BACKLOG.md and progress.md
+
+### --discover Flag
+
+When launched with `--discover`, run ONLY the discovery loop (skip normal execution).
+Useful for periodic audits without executing any backlog work.
+
 ## Autonomy Boundaries
 
 - Default iteration limit: 5 attempts on a failing approach, then escalate
