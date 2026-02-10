@@ -44,6 +44,24 @@ After each session, write a log to `logs/session-NNN.md` with:
 - Issues encountered
 - Time spent (approximate)
 
+## Background Execution
+
+The launcher supports background mode for fire-and-forget sessions:
+
+```bash
+./launcher.sh --background                    # Run in background (1 hour timeout)
+./launcher.sh --background --timeout 7200     # Custom timeout (2 hours)
+./launcher.sh --stop                          # Kill running background session
+tail -f logs/session-NNN.log                  # Monitor live output
+```
+
+Background sessions:
+- Log all output to `logs/session-NNN.log`
+- Write PID to `.session.pid` for kill switch
+- Auto-terminate after timeout (default: 3600s)
+- Clean up PID file on exit (normal, timeout, or error)
+- Resume works automatically -- next launch reads progress.md
+
 ## Autonomy Boundaries
 
 - Default iteration limit: 5 attempts on a failing approach, then escalate
