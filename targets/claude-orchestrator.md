@@ -32,6 +32,7 @@ uv run pytest -q && uv run ruff check src/ tests/ && uv run mypy src/claude_orch
 
 ## Constraints
 - Tool count is currently 13 -- tests assert this; update test if adding/removing tools
+- Eval baseline at eval/baseline.json -- re-run `python -m eval.runner --baseline` after changes
 - protocol.md is bundled as package data -- changes require reinstall or editable install
 - Verification suite MUST pass before any commit (pytest, ruff, mypy, bandit)
 - No breaking changes to existing MCP tool signatures without updating all consumers
