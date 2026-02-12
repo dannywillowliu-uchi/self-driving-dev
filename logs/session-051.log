@@ -1,0 +1,12 @@
+[Thu 12 Feb 2026 01:05:01 CST] Phase 21: worktree=/Users/dannyliu/personal_projects/autonomous-dev-scheduler/.worktrees/phase-21 session=051
+## Summary
+
+**Phase 21 is already fully implemented on main** (commit `5ff435d`). Here's what was confirmed:
+
+**Requirements satisfied:**
+1. **Prompt via stdin**: `_run_claude()` in `green_branch.py:190-215` uses `asyncio.create_subprocess_exec` with `stdin=asyncio.subprocess.PIPE`, and the prompt is passed via `proc.communicate(input=prompt.encode())`
+2. **No shell string interpolation**: The method uses `create_subprocess_exec` with a proper argument list (`"claude", "-p", "--permission-mode", "bypassPermissions", "--max-budget-usd", str(budget)`) -- no shell involved
+3. **Shell metacharacter test**: `test_claude_receives_prompt_via_method` tests with `$(rm -rf /)`, backticks, quotes, and `&& echo pwned`
+4. **Existing tests pass**: All green_branch tests cover fixup scenarios, merge conflicts, timeouts, and crash recovery
+
+**Issue encountered**: The worktree at `.worktrees/phase-21` was removed during this session (likely by the orchestrator). Since there are no changes to make (the fix is already on main), the result file was written to the repo root.

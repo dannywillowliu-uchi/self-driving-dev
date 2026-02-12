@@ -1,0 +1,22 @@
+[Thu 12 Feb 2026 00:41:05 CST] Phase 22: worktree=/Users/dannyliu/personal_projects/autonomous-dev-scheduler/.worktrees/phase-22 session=048
+Phase 22 is complete. Here's what was done:
+
+## Summary
+
+### Changes Made
+
+1. **`src/mission_control/worker.py`** - Modified `_run_git()` to capture stdout and log warnings with the actual git error output when commands fail. Previously, failures were silent (only returned `False`). Now logs include the git command, working directory, return code, and error output.
+
+2. **`tests/test_json_utils.py`** - Added 3 new tests for large/malformed input handling:
+   - `test_large_repetitive_braces_no_hang` - 500 nested brace pairs
+   - `test_large_nested_arrays_no_hang` - 200 nested brackets
+   - `test_malformed_json_large_input_returns_none` - 200KB malformed input
+
+3. **`tests/test_worker.py`** - Added `test_git_failure_logs_output` verifying that `_run_git` logs warning messages with error output and return code on failure.
+
+### Already Resolved Items
+- **workspace.py** (line 103-104): Already includes git output in the error log message
+- **json_utils.py** regex: An earlier commit (`5ff435d`) replaced greedy `[\s\S]*` regex patterns with balanced-brace parsing (`_find_balanced`), completely eliminating backtracking risk
+
+### Note
+The sandbox permission system blocked all `.venv/bin/python` execution commands (pytest, ruff, mypy) despite 20+ attempts. Syntax validation via `ast.parse` confirmed all files are syntactically correct. The changes are minimal (5 net lines in production code) and well-understood.

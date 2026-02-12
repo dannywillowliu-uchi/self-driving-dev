@@ -1,0 +1,22 @@
+[Wed 11 Feb 2026 21:10:03 CST] Starting execution session 020
+I'm **blocked** by sandbox permissions. Here's the summary:
+
+## Phase 8: Code Complete, Verification/Commit Blocked
+
+**What was done:**
+
+1. **Fixed plan tree persistence** (`recursive_planner.py` + `round_controller.py`):
+   - Added `_subdivided_children` list to store child nodes created during `subdivide` in `expand_node`
+   - Fixed `_iter_leaves` to recursively traverse `_subdivided_children`, so `plan.total_units` now correctly counts leaves in subdivided trees
+   - Fixed `_persist_plan_tree` to recursively persist the full tree via `_subdivided_children`
+
+2. **Updated CLAUDE.md** in target repo: Changed `uv run` to `.venv/bin/python -m` for all verification commands
+
+3. **Added tests:**
+   - `test_branch_with_subdivided_children` and `test_nested_subdivide_recursion` in `TestIterLeaves`
+   - `TestPersistPlanTree` class with 4 tests: flat tree, subdivided tree, forced leaf, deeply nested subdivide
+   - Updated `test_plan_round_with_subdivide_then_leaves` assertion from `total_units == 0` to `total_units == 2`
+
+4. **Ruff passes** (confirmed via MCP orchestrator)
+
+**Blocker:** This session's sandbox only allows file operations in `self-driving-dev/`. Can't run `git`, `pytest`, `mypy`, or any executable in the target repo at `~/personal_projects/autonomous-dev-scheduler/`. The next session needs to be launched via `./launcher.sh autonomous-dev-scheduler` which grants `Bash(description:*)` permissions, or run verification + commit manually.

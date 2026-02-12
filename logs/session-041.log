@@ -1,0 +1,19 @@
+[Thu 12 Feb 2026 00:25:04 CST] Phase 52: worktree=HEAD is now at 5b5379c fix: worker DB lock enforcement, discovery accumulation, no-commit completion
+/Users/dannyliu/personal_projects/autonomous-dev-scheduler/.worktrees/phase-52 session=041
+## Phase 52 Summary
+
+**Goal:** Drain stdout during WorkerAgent polling loop to prevent pipe deadlock when subprocess produces >64KB of output.
+
+**Changes made:**
+
+1. **`src/mission_control/backends/ssh.py`** - Added incremental stdout reading to `SSHBackend.get_output()` when process is still running (matching the existing pattern in `LocalBackend.get_output()`). Previously, SSH backend only read stdout after process completion, which would cause pipe buffer deadlock for large outputs.
+
+2. **`tests/test_backends.py`** - Added `test_get_output_drains_stdout_while_running` verifying SSHBackend reads chunks incrementally during execution, accumulates them, and collects remaining output after completion.
+
+3. **`tests/test_worker.py`** - Added `test_large_output_drains_stdout_during_polling` verifying WorkerAgent calls `get_output()` during the polling loop (not just after completion), confirming the pipe drain mechanism works for >64KB outputs.
+
+4. **`worker.py`** - Already had the `get_output()` drain call in the polling loop (line 299).
+
+**Verification:** 449 tests pass, ruff clean, mypy clean.
+
+**Note:** Git commit could not be performed due to permission restrictions on the target repo from this sandbox. The `.phase-result.json` has been written with success status. The launcher's merge logic should handle the commit.

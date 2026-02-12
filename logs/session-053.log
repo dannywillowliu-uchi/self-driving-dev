@@ -1,0 +1,17 @@
+[Thu 12 Feb 2026 01:05:02 CST] Phase 23: worktree=/Users/dannyliu/personal_projects/autonomous-dev-scheduler/.worktrees/phase-23 session=053
+Phase 23 is already complete. Here's the summary:
+
+**Phase 23: Fix shell injection in recursive_planner.py + zombie process leak**
+
+Both fixes were already implemented and merged to main (the worktree was cleaned up by the orchestrator):
+
+1. **Shell injection fix in `recursive_planner.py`** (line 180-192): Uses `create_subprocess_exec` with `stdin=asyncio.subprocess.PIPE` and passes the prompt via `proc.communicate(input=prompt.encode())`. No shell string interpolation of untrusted data.
+
+2. **Zombie process fix in `session.py`** (line 212-216): The `TimeoutError` handler calls `proc.kill()` + `await proc.wait()` (with `ProcessLookupError` guard) before returning, ensuring no zombie Claude sessions.
+
+3. **Tests exist**:
+   - `test_llm_uses_stdin_not_shell_interpolation` - verifies shell metacharacters in scope/objective don't cause injection
+   - `test_llm_timeout_returns_fallback_and_kills_process` - verifies planner timeout cleanup
+   - `TestSpawnSessionTimeout.test_timeout_kills_subprocess` - verifies session timeout kills subprocess
+
+The `.phase-result.json` has been written with success status.

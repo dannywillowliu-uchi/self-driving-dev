@@ -1,0 +1,29 @@
+[Thu 12 Feb 2026 00:25:04 CST] Phase 53: worktree=HEAD is now at 5b5379c fix: worker DB lock enforcement, discovery accumulation, no-commit completion
+/Users/dannyliu/personal_projects/autonomous-dev-scheduler/.worktrees/phase-53 session=042
+Phase 53 is complete. Here's a summary of what was done:
+
+**Phase 53: Prevent worker branch deletion before merge queue can fetch it**
+
+**Problem:** Worker submitted MergeRequest then immediately deleted the feature branch. The merge queue later tried to fetch it via git remote -- the branch was already gone, causing the MR to be rejected and work lost.
+
+**Changes made:**
+
+1. **`src/mission_control/worker.py`**: 
+   - Added `_cleanup_merged_branches()` method that deletes feature branches only for MRs in terminal states (merged/rejected/conflict) -- meaning the merge queue has already fetched them
+   - On the success path, worker now only checks out base branch without deleting the feature branch (branch stays alive for merge queue)
+   - Cleanup runs lazily at the start of `_execute_unit()` before creating a new branch
+
+2. **`src/mission_control/db.py`**: 
+   - Added `get_processed_merge_requests_for_worker(worker_id)` method that returns MRs in terminal states (merged/rejected/conflict) for a specific worker
+
+3. **`tests/test_worker.py`**: 4 new tests:
+   - `test_branch_exists_until_merge_queue_processes` -- verifies no branch -D on success path
+   - `test_cleanup_deletes_branches_for_processed_mrs` -- verifies cleanup for merged MRs
+   - `test_cleanup_skips_pending_mr_branches` -- verifies pending MR branches are preserved
+   - `test_cleanup_runs_before_new_unit` -- verifies cleanup runs before new branch creation
+
+4. **`tests/test_db.py`**: 2 new tests:
+   - `test_get_processed_merge_requests_for_worker` -- verifies filtering by worker and status
+   - `test_get_processed_merge_requests_includes_conflict` -- verifies conflict status included
+
+**Verification:** 451 tests pass, ruff clean, mypy clean.

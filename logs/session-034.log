@@ -1,0 +1,14 @@
+[Wed 11 Feb 2026 23:18:28 CST] Starting discovery session 034
+Discovery complete. Here's a summary:
+
+**Discovery Session 018 Results**
+
+The static analyzer found the same 26 gaps as last session (all known false positives). A deep Opus-level audit of all 21 source files found 12 genuine issues. After manual verification, I added 3 new phases to BACKLOG.md:
+
+| Phase | Issue | Severity | Category |
+|-------|-------|----------|----------|
+| **36** | Merge queue snapshots both taken on feature branch -- before/after comparison is meaningless, regressions go undetected | Medium | Correctness bug |
+| **37** | SSH backend `provision_workspace` and `release_workspace` missing `shlex.quote()` despite `spawn()` already using it | Critical (defense-in-depth) | Security |
+| **38** | Worker doesn't clean up workspace on success path (stale branches accumulate) + `LocalBackend.checkout -b` fails silently on unit retry | Medium | Resource leak + bug |
+
+All 3 phases are marked `checkpoint: true`. The remaining 9 audit findings (stall detection regression blindness, backend pool initialization, stdout buffer growth, coordinator monitor race, etc.) are lower priority and can be picked up in a future discovery cycle.

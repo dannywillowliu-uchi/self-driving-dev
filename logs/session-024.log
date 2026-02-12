@@ -1,0 +1,26 @@
+[Wed 11 Feb 2026 22:00:49 CST] Starting execution session 024
+## Session Summary
+
+**Discovery + Phases 23-25 completed.** Commit `748df3c` in autonomous-dev-scheduler.
+
+### What was done:
+
+**Discovery:** Deep audit via Opus subagent found 18 issues, 7 verified as genuine. Added 3 new phases to BACKLOG.md.
+
+**Phase 23 (Security):**
+- Fixed shell injection in `recursive_planner.py` -- switched from `create_subprocess_shell` with string interpolation to `create_subprocess_exec` with stdin piping (same pattern as the green_branch.py fix from Phase 21)
+- Fixed zombie process leak in `session.py` -- added `proc.kill()`/`proc.wait()` on timeout
+
+**Phase 24 (Data Correctness):**
+- Fixed `LocalBackend.get_output` data loss -- the final stdout read for completed processes never executed because the buffer dict key was always present (initialized at spawn). Added a `_stdout_collected` set to track collection state
+- Added `asyncio.Lock` to `GreenBranchManager.merge_to_working` to prevent concurrent git operations from corrupting the shared workspace
+
+**Phase 25 (Logic Errors):**
+- Added `unit.attempt += 1` to all 6 failure paths in `RoundController._execute_single_unit`
+- Fixed off-by-one: `mission.total_rounds` is now set before `_should_stop` check
+- Upgraded `parse_mc_result` to use `extract_json_from_text` for multiline JSON support
+
+**10 files modified, 287 insertions, 46 deletions.**
+
+### Blocked:
+- Could not run verification suite (pytest/ruff/mypy) due to persistent permission denials for `.venv/bin/*` commands. Please run `bash run_verify.sh` manually to confirm all tests pass.

@@ -1,0 +1,16 @@
+[Wed 11 Feb 2026 22:43:26 CST] Starting discovery session 029
+Discovery complete. Here's a summary:
+
+## Discovery Session Summary
+
+**Analysis:** Static analysis (53 files, 9121 LOC) + deep Opus audit (26 findings across all source modules). Verified findings against actual source code to filter false positives.
+
+**3 new phases added to BACKLOG.md (Phases 32-34):**
+
+**Phase 32** (Critical) - Scheduler regression detection is completely broken. `get_latest_snapshot()` returns the snapshot that was just inserted, so `previous == before` and `SnapshotDelta` always shows zero change. Also, pytest errors aren't counted in `test_failed`.
+
+**Phase 33** (High) - Three data integrity bugs: mypy parser counts all `"error:"` lines including pytest tracebacks as type errors; `recover_stale_units` never increments the attempt counter enabling infinite retry of crash-inducing units; LocalBackend doesn't clear `_stdout_collected` on `spawn()` so reused workers lose output.
+
+**Phase 34** (Medium) - Green branch `_run_claude` and `_run_command` have no timeouts and can hang indefinitely. Merge queue leaves workspace on wrong branch after rebase failure.
+
+All phases have `checkpoint: true`. Updated `progress.md` and wrote session log to `logs/session-027.md`.

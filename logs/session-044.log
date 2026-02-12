@@ -1,0 +1,16 @@
+[Thu 12 Feb 2026 00:26:43 CST] Starting discovery session 044
+Discovery session complete. Here's the summary:
+
+## Discovery Session 028 - Summary
+
+**Codebase status:** 53 files, 9893 LOC, test ratio 1.12, 100% type hints. 451 tests pass, ruff clean, mypy clean. The static analyzer's 27 gaps are all known false positives.
+
+**Deep Opus audit found 8 findings.** Top 3 verified and added as new phases:
+
+| Phase | Severity | Issue |
+|-------|----------|-------|
+| **57** | HIGH | `_execute_units` in round_controller ignores `depends_on` DAG -- all units run concurrently even when they have dependency relationships. Mission mode completely bypasses the SQL-level dependency check that the Coordinator path uses |
+| **58** | HIGH | Scheduler discards `delete_branch`/`merge_branch` return values -- failed git ops leave repo on wrong branch, corrupting subsequent snapshots. Also `spawn_session` OSError not caught (crashes scheduler loop) |
+| **59** | MEDIUM | `WorkspacePool._reset_clone` ignores all git return codes -- failed fetch/reset silently returns dirty/stale clones to the pool |
+
+All 3 phases are `checkpoint: true` per discovery constraints. BACKLOG.md and progress.md updated. Session log written to `logs/session-028.md`.

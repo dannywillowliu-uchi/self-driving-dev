@@ -21,6 +21,7 @@ Every Claude Code session in this repo MUST follow this loop:
 - NEVER skip reading progress.md and BACKLOG.md at session start
 - NEVER modify BACKLOG.md during execution -- it is the plan of record
 - progress.md Current State MUST be rewritten (not appended) each phase
+- When all backlog phases are done, progress.md MUST contain the phrase "all phases complete" -- this is the signal that triggers discovery mode
 - Session logs go in `logs/session-NNN.md` after each session completes
 - If blocked: update progress.md Blocked field, notify via Telegram, stop
 
@@ -62,6 +63,50 @@ Background sessions:
 - Clean up PID file on exit (normal, timeout, or error)
 - Resume works automatically -- next launch reads progress.md
 
+## Parallel Phase Execution
+
+When `--loop` mode finds multiple runnable phases (no unmet dependencies), it launches them in parallel using git worktrees:
+
+```bash
+MAX_PARALLEL=3 ./launcher.sh --loop --background    # Default: 3 parallel agents
+MAX_PARALLEL=5 ./launcher.sh --loop --background    # Override to 5
+./launcher.sh --dry-run --loop                       # Preview runnable phases
+```
+
+### How It Works
+
+1. **Dependency parsing**: Reads `BACKLOG.md` for `**Dependencies:**` lines, builds a DAG
+2. **Runnable detection**: Phases with no unmet deps and not yet completed are runnable
+3. **Worktree isolation**: Each agent gets `<target>/.worktrees/phase-N/` with its own branch
+4. **Parallel execution**: Up to `MAX_PARALLEL` (default 3) `claude -p` processes run concurrently
+5. **Sequential merge**: Results merge back to main one at a time, with conflict detection and verification
+6. **Cleanup**: Worktrees and branches are removed after merge
+
+### `.phase-result.json` Contract
+
+Each parallel agent writes this file to the worktree root after completing:
+
+```json
+{"status": "success", "summary": "Brief description of changes"}
+```
+
+Or on failure:
+
+```json
+{"status": "failed", "summary": "What went wrong"}
+```
+
+### `.worktrees/` Directory
+
+Created in the target repo during parallel execution. Contains one subdirectory per phase (`phase-N/`). Each worktree gets a symlinked `.venv` from the main repo. Cleaned up automatically after merge. Should be added to `.gitignore` in target repos.
+
+### Fallback Behavior
+
+- If only 1 phase is runnable: runs sequentially (existing behavior)
+- If worktree creation fails: skips that phase, continues with others
+- If merge has conflicts: aborts merge for that phase, retries next cycle
+- If verification fails after merge: reverts merge, marks phase as failed
+
 ## Continuous Discovery
 
 When all backlog phases are complete (no unblocked phases remain), switch to discovery mode instead of stopping:
@@ -69,24 +114,23 @@ When all backlog phases are complete (no unblocked phases remain), switch to dis
 ### Discovery Session Loop
 
 1. Confirm all phases in BACKLOG.md are complete (check progress.md)
-2. Audit the target repo:
-   - Run the verification suite (`run_verification` or target-specific commands)
+2. Run structured analysis via claude-orchestrator MCP tools:
+   a. Call `analyze_codebase_tool(project_path)` -- returns CodebaseAnalysis JSON with metrics, module info, and identified gaps
+   b. Call `research_best_practices_tool(gaps_json, project_type)` -- takes the `gaps` array from step (a) and returns ranked GapReports with impact/effort scores
+   c. Call `generate_improvement_proposals_tool(gap_reports_json, max_proposals=3, target_name=<target>, start_phase=<next>)` -- converts gap reports into BACKLOG.md-ready phases with goals, tasks, and verification criteria
+3. Write the generated proposals to BACKLOG.md:
+   - Use the `backlog_markdown` field from the proposals tool output
+   - Every generated phase has `checkpoint: true` (discovery is advisory, not autonomous)
+   - Max 3 new phases per discovery session
+4. Update progress.md: set Phase to `Discovery complete -- new phases added` and clear the "all phases complete" text (this signals the launcher to resume execution mode)
+5. Send Telegram notification with discovery summary
+6. Stop and wait for human review of the new backlog phases
+
+**Fallback**: If MCP tools are unavailable (server not running), fall back to manual audit:
+   - Run the verification suite (target-specific commands)
    - Read recent git log (last 10 commits) for context
    - Scan for TODOs/FIXMEs in source files
-   - Check for outdated dependencies if applicable
-3. Rank discovered opportunities by priority:
-   - **Regressions** (broken tests, new lint errors) -- highest priority
-   - **Bugs** (TODO/FIXME markers with severity hints)
-   - **Code quality** (refactoring opportunities, test coverage gaps)
-   - **Features** (enhancements surfaced during audit)
-   - **Dependencies** (outdated packages, security advisories) -- lowest priority
-4. Write the top 1-3 opportunities as new phases in BACKLOG.md:
-   - Every new phase MUST have `checkpoint: true` (discovery is advisory, not autonomous)
-   - Include clear problem statement and verification criteria
-   - Max 3 new phases per discovery session
-5. Update progress.md: `Phase: Discovery complete`, list what was found
-6. Send Telegram notification with discovery summary
-7. Stop and wait for human review of the new backlog phases
+   - Rank findings manually and write phases to BACKLOG.md
 
 ### Discovery Constraints
 

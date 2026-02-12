@@ -1,0 +1,18 @@
+[Thu 12 Feb 2026 00:25:04 CST] Phase 51: worktree=HEAD is now at 5b5379c fix: worker DB lock enforcement, discovery accumulation, no-commit completion
+/Users/dannyliu/personal_projects/autonomous-dev-scheduler/.worktrees/phase-51 session=040
+Phase 51 is complete. Here's a summary:
+
+**Phase 51: Mark unit failed when merge to working branch fails in RoundController**
+
+**Code change**: Already implemented. The current code at `round_controller.py:423-435` correctly:
+- Attempts `merge_to_working` before setting `unit.status = "completed"`
+- Sets `unit.status = "completed"` only when `merged` is True (line 430)
+- Sets `unit.status = "failed"`, increments `unit.attempt`, and sets an informative output summary when `merged` is False (lines 432-435)
+
+**Tests added** (2 new tests in `tests/test_round_controller.py`):
+1. `test_merge_failure_marks_unit_failed` - Verifies that when `merge_to_working` returns False, the unit is marked "failed", attempt is incremented, and output summary mentions merge
+2. `test_merge_success_marks_unit_completed` - Regression test verifying successful merges still mark the unit as "completed" with attempt unchanged
+
+**Verification**: All 443 tests pass, ruff clean, mypy clean.
+
+**Commit**: `404ef80` on main.

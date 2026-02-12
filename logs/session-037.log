@@ -1,0 +1,14 @@
+[Thu 12 Feb 2026 00:15:09 CST] Starting discovery session 037
+Discovery session complete. Here's the summary:
+
+**Discovery Session 025 -- autonomous-dev-scheduler**
+
+The static analyzer returned the same 27 gaps as prior sessions (all known false positives). A deep Opus audit of all source files produced 13 findings (3 high, 7 medium, 3 low). I manually verified each finding against the current codebase. Also found and replaced Phases 48-50 in BACKLOG.md which described already-fixed issues (worker DB calls were already using `locked_call`, discoveries already used `.extend()`, no-commit completion was already handled).
+
+**3 new phases added to BACKLOG.md (all checkpoint: true):**
+
+- **Phase 51** (High): Unit marked "completed" even when `merge_to_working` fails -- work silently lost because status is set before the merge attempt
+- **Phase 52** (Medium): WorkerAgent polling loop never drains stdout during execution -- pipe deadlock for >64KB output causes timeout and work loss
+- **Phase 53** (High): Worker deletes feature branch immediately after submitting MR before merge queue can fetch it -- race condition causes fetch failure and work loss
+
+All three are data-loss bugs in the Coordinator/WorkerAgent execution path. No code changes made -- discovery only.
